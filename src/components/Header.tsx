@@ -2,8 +2,8 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ShoppingCart, Search, Menu, X, User, Ticket, Store } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { ShoppingCart, Search, Menu, X, User, Ticket, Store, MessageCircle } from 'lucide-react'
+import { useState } from 'react'
 import { clsx } from 'clsx'
 import { Button } from './ui/Button'
 import { useCartStore } from '@/store/cart'
@@ -13,19 +13,17 @@ const navItems = [
   { href: '/', label: 'Home' },
   { href: '/events', label: 'Events', icon: Ticket },
   { href: '/marketplace', label: 'Marketplace', icon: Store },
+  { href: '/chat', label: 'Messages', icon: MessageCircle },
 ]
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
   const cartCount = useCartStore((state) => state.getItemCount())
   const { user } = useUser()
 
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  const mounted = true
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-[#0f0f23]/95 backdrop-blur-md border-b border-[#2d2d44]">

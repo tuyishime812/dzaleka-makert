@@ -18,7 +18,7 @@ export default function ShippingPage() {
           </section>
           <section>
             <h2 className="text-2xl font-semibold text-white mb-3">Order Tracking</h2>
-            <p>Once your order is shipped, you'll receive a confirmation with tracking details. You can also track your orders from your dashboard.</p>
+            <p>Once your order is shipped, you&apos;ll receive a confirmation with tracking details. You can also track your orders from your dashboard.</p>
           </section>
         </div>
       </div>

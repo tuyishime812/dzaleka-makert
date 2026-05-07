@@ -1,141 +1,14 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowRight, Ticket, Store, TrendingUp, Shield, Truck, Headphones, Star } from 'lucide-react'
+import { ArrowRight, Ticket, Store, TrendingUp, Shield, Truck, Headphones } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { ProductCard } from '@/components/ui/ProductCard'
 import { Badge } from '@/components/ui/Badge'
-import { Product } from '@/types'
-
-const featuredProducts: Product[] = [
-  {
-    id: '1',
-    seller_id: '1',
-    category_id: '1',
-    title: 'Summer Music Festival 2026 - VIP Pass',
-    description: 'Get exclusive VIP access to the biggest music festival of the year',
-    price: 299,
-    original_price: 399,
-    images: ['https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=800'],
-    stock: 50,
-    is_event_ticket: true,
-    event_date: '2026-07-15T18:00:00Z',
-    event_location: 'Central Park, New York',
-    status: 'active',
-    views: 1250,
-    created_at: '2026-01-01',
-    updated_at: '2026-01-01',
-    average_rating: 4.8,
-  },
-  {
-    id: '2',
-    seller_id: '2',
-    category_id: '2',
-    title: 'Handcrafted Leather Bag - Artisan Made',
-    description: 'Premium quality leather bag made by local artisans',
-    price: 189,
-    original_price: null,
-    images: ['https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=800'],
-    stock: 25,
-    is_event_ticket: false,
-    event_date: null,
-    event_location: null,
-    status: 'active',
-    views: 890,
-    created_at: '2026-01-02',
-    updated_at: '2026-01-02',
-    average_rating: 4.9,
-  },
-  {
-    id: '3',
-    seller_id: '3',
-    category_id: '3',
-    title: 'Tech Conference 2026 - Early Bird',
-    description: 'Join the biggest tech conference with industry leaders',
-    price: 499,
-    original_price: 699,
-    images: ['https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800'],
-    stock: 100,
-    is_event_ticket: true,
-    event_date: '2026-09-20T09:00:00Z',
-    event_location: 'San Francisco Convention Center',
-    status: 'active',
-    views: 2100,
-    created_at: '2026-01-03',
-    updated_at: '2026-01-03',
-    average_rating: 4.7,
-  },
-  {
-    id: '4',
-    seller_id: '4',
-    category_id: '4',
-    title: 'Wireless Noise-Canceling Headphones',
-    description: 'Premium sound quality with industry-leading noise cancellation',
-    price: 349,
-    original_price: 449,
-    images: ['https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800'],
-    stock: 75,
-    is_event_ticket: false,
-    event_date: null,
-    event_location: null,
-    status: 'active',
-    views: 3200,
-    created_at: '2026-01-04',
-    updated_at: '2026-01-04',
-    average_rating: 4.6,
-  },
-  {
-    id: '5',
-    seller_id: '5',
-    category_id: '1',
-    title: 'Comedy Night Live - VIP Seating',
-    description: 'Enjoy a night of laughter with top comedians',
-    price: 75,
-    original_price: null,
-    images: ['https://images.unsplash.com/photo-1585699324551-f6c309eedeca?w=800'],
-    stock: 30,
-    is_event_ticket: true,
-    event_date: '2026-05-10T20:00:00Z',
-    event_location: 'The Laugh Factory, LA',
-    status: 'active',
-    views: 560,
-    created_at: '2026-01-05',
-    updated_at: '2026-01-05',
-    average_rating: 4.5,
-  },
-  {
-    id: '6',
-    seller_id: '6',
-    category_id: '5',
-    title: 'Organic Coffee Beans - Premium Blend',
-    description: 'Sustainably sourced, freshly roasted organic coffee',
-    price: 29,
-    original_price: 39,
-    images: ['https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=800'],
-    stock: 200,
-    is_event_ticket: false,
-    event_date: null,
-    event_location: null,
-    status: 'active',
-    views: 780,
-    created_at: '2026-01-06',
-    updated_at: '2026-01-06',
-    average_rating: 4.8,
-  },
-]
-
-const categories = [
-  { name: 'Music Events', slug: 'music', icon: '🎵', count: 150 },
-  { name: 'Sports', slug: 'sports', icon: '⚽', count: 89 },
-  { name: 'Art & Culture', slug: 'art', icon: '🎨', count: 67 },
-  { name: 'Electronics', slug: 'electronics', icon: '📱', count: 234 },
-  { name: 'Fashion', slug: 'fashion', icon: '👗', count: 178 },
-  { name: 'Home & Living', slug: 'home', icon: '🏠', count: 145 },
-  { name: 'Food & Drink', slug: 'food', icon: '🍕', count: 92 },
-  { name: 'Books & Education', slug: 'books', icon: '📚', count: 56 },
-]
+import { useEffect, useState } from 'react'
+import { createBrowserClient } from '@/lib/supabase'
+import { Product, Category } from '@/types'
 
 const features = [
   {
@@ -161,6 +34,27 @@ const features = [
 ]
 
 export default function HomePage() {
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const supabase = createBrowserClient()
+      
+      const [productsRes, categoriesRes] = await Promise.all([
+        supabase.from('products').select('*').eq('status', 'active').order('created_at', { ascending: false }).limit(6),
+        supabase.from('categories').select('*').order('name'),
+      ])
+
+      if (productsRes.data) setFeaturedProducts(productsRes.data)
+      if (categoriesRes.data) setCategories(categoriesRes.data)
+      setLoading(false)
+    }
+
+    fetchData()
+  }, [])
+
   return (
     <div className="min-h-screen">
       <section className="relative overflow-hidden bg-gradient-to-br from-[#0f0f23] via-[#1a1a2e] to-[#16213e]">
@@ -198,28 +92,6 @@ export default function HomePage() {
               </Link>
             </div>
           </div>
-
-          <div className="mt-16 flex items-center gap-8 animate-fade-in stagger-3">
-            <div className="flex -space-x-3">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div
-                  key={i}
-                  className="w-10 h-10 rounded-full border-2 border-[#0f0f23] bg-gradient-to-br from-[#e94560] to-purple-600 flex items-center justify-center"
-                >
-                  <span className="text-xs font-bold text-white">{i}</span>
-                </div>
-              ))}
-            </div>
-            <div>
-              <div className="flex items-center gap-1">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                ))}
-                <span className="ml-2 text-white font-semibold">4.9</span>
-              </div>
-              <p className="text-sm text-[#94a3b8]">From 10,000+ reviews</p>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -255,16 +127,15 @@ export default function HomePage() {
             </Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {categories.map((category, index) => (
-              <Link key={index} href={`/search?category=${category.slug}`}>
+            {categories.map((category) => (
+              <Link key={category.id} href={`/search?category=${category.slug}`}>
                 <Card hover className="p-6 text-center group">
                   <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">
-                    {category.icon}
+                    {category.icon || '📦'}
                   </div>
                   <h3 className="font-semibold text-white group-hover:text-[#e94560] transition-colors">
                     {category.name}
                   </h3>
-                  <p className="text-sm text-[#94a3b8]">{category.count} items</p>
                 </Card>
               </Link>
             ))}
@@ -287,14 +158,15 @@ export default function HomePage() {
               <Button variant="ghost">View All Events</Button>
             </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredProducts
-              .filter((p) => p.is_event_ticket)
-              .slice(0, 3)
-              .map((product) => (
+          {loading ? (
+            <div className="text-center text-[#94a3b8] py-12">Loading...</div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {featuredProducts.filter((p) => p.is_event_ticket).slice(0, 3).map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
-          </div>
+            </div>
+          )}
         </div>
       </section>
 
@@ -313,14 +185,15 @@ export default function HomePage() {
               <Button variant="ghost">View All Products</Button>
             </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredProducts
-              .filter((p) => !p.is_event_ticket)
-              .slice(0, 3)
-              .map((product) => (
+          {loading ? (
+            <div className="text-center text-[#94a3b8] py-12">Loading...</div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {featuredProducts.filter((p) => !p.is_event_ticket).slice(0, 3).map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
-          </div>
+            </div>
+          )}
         </div>
       </section>
 
@@ -336,8 +209,9 @@ export default function HomePage() {
           <div className="flex flex-wrap justify-center gap-4">
             <Link href="/seller/signup">
               <Button
+                variant="outline"
                 size="lg"
-                className="bg-white text-[#e94560] hover:bg-white/90"
+                className="border-white text-white hover:bg-white/10"
               >
                 <Store className="mr-2 w-5 h-5" />
                 Become a Seller

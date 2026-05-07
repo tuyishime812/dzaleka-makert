@@ -1,108 +1,52 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { User, Package, Heart, Settings, Star, TrendingUp, DollarSign, ShoppingCart } from 'lucide-react'
+import { Package, Heart, Settings, TrendingUp, ShoppingCart } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { ProductCard } from '@/components/ui/ProductCard'
 import { Product } from '@/types'
 import { useUser } from '@clerk/nextjs'
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts'
-
-const salesData = [
-  { name: 'Jan', sales: 4000 },
-  { name: 'Feb', sales: 3000 },
-  { name: 'Mar', sales: 5000 },
-  { name: 'Apr', sales: 2780 },
-  { name: 'May', sales: 1890 },
-  { name: 'Jun', sales: 6390 },
-  { name: 'Jul', sales: 4900 },
-]
-
-const revenueData = [
-  { name: 'Mon', revenue: 1200 },
-  { name: 'Tue', revenue: 2100 },
-  { name: 'Wed', revenue: 1800 },
-  { name: 'Thu', revenue: 2400 },
-  { name: 'Fri', revenue: 3200 },
-  { name: 'Sat', revenue: 2800 },
-  { name: 'Sun', revenue: 1500 },
-]
-
-const mockProducts: Product[] = [
-  {
-    id: '1',
-    seller_id: '1',
-    category_id: '1',
-    title: 'Summer Music Festival 2026 - VIP Pass',
-    description: 'Get exclusive VIP access',
-    price: 299,
-    original_price: 399,
-    images: ['https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=800'],
-    stock: 50,
-    is_event_ticket: true,
-    event_date: '2026-07-15T18:00:00Z',
-    event_location: 'Central Park, New York',
-    status: 'active',
-    views: 1250,
-    created_at: '2026-01-01',
-    updated_at: '2026-01-01',
-    average_rating: 4.8,
-  },
-]
-
-const orders = [
-  { id: '1', status: 'delivered', total: 299, items: 1, date: '2026-01-15' },
-  { id: '2', status: 'shipped', total: 189, items: 2, date: '2026-01-20' },
-  { id: '3', status: 'processing', total: 499, items: 1, date: '2026-01-22' },
-]
-
-const wishlist: Product[] = [
-  {
-    id: '4',
-    seller_id: '4',
-    category_id: '4',
-    title: 'Wireless Noise-Canceling Headphones',
-    description: 'Premium sound quality',
-    price: 349,
-    original_price: 449,
-    images: ['https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800'],
-    stock: 75,
-    is_event_ticket: false,
-    event_date: null,
-    event_location: null,
-    status: 'active',
-    views: 3200,
-    created_at: '2026-01-04',
-    updated_at: '2026-01-04',
-    average_rating: 4.6,
-  },
-]
+import { createBrowserClient } from '@/lib/supabase'
 
 const tabs = [
   { id: 'overview', label: 'Overview', icon: TrendingUp },
-  { id: 'orders', label: 'Orders', icon: Package },
+  { id: 'products', label: 'My Products', icon: Package },
   { id: 'wishlist', label: 'Wishlist', icon: Heart },
   { id: 'settings', label: 'Settings', icon: Settings },
 ]
 
-const statusColors: Record<string, 'success' | 'warning' | 'accent'> = {
-  delivered: 'success',
-  shipped: 'warning',
-  processing: 'accent',
-}
-
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState('overview')
   const { user } = useUser()
+  const [products, setProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      if (!user) return
+      
+      const supabase = createBrowserClient()
+      const { data } = await supabase
+        .from('products')
+        .select('*')
+        .eq('seller_id', user.id)
+        .order('created_at', { ascending: false })
+
+      if (data) setProducts(data)
+      setLoading(false)
+    }
+
+    fetchProducts()
+  }, [user])
 
   const stats = [
-    { label: 'Total Revenue', value: '$12,450', change: '+12%', icon: DollarSign, color: 'text-green-400' },
-    { label: 'Orders', value: '48', change: '+8%', icon: ShoppingCart, color: 'text-blue-400' },
-    { label: 'Products Sold', value: '124', change: '+23%', icon: Package, color: 'text-purple-400' },
-    { label: 'Avg. Rating', value: '4.8', change: '+0.2', icon: Star, color: 'text-yellow-400' },
+    { label: 'Total Products', value: products.length.toString(), change: '', icon: Package, color: 'text-blue-400' },
+    { label: 'Active Listings', value: products.filter(p => p.status === 'active').length.toString(), change: '', icon: ShoppingCart, color: 'text-green-400' },
+    { label: 'Sold Items', value: products.filter(p => p.status === 'sold').length.toString(), change: '', icon: Package, color: 'text-purple-400' },
+    { label: 'Total Views', value: products.reduce((acc, p) => acc + (p.views || 0), 0).toString(), change: '', icon: TrendingUp, color: 'text-yellow-400' },
   ]
 
   return (
@@ -112,7 +56,7 @@ export default function DashboardPage() {
           <h1 className="font-heading text-3xl font-bold text-white mb-2">
             My Dashboard
           </h1>
-          <p className="text-[#94a3b8]">Manage your orders, wishlist, and settings</p>
+          <p className="text-[#94a3b8]">Manage your products and account</p>
         </div>
 
         <div className="grid lg:grid-cols-4 gap-8">
@@ -153,9 +97,6 @@ export default function DashboardPage() {
                   >
                     <tab.icon className="w-5 h-5" />
                     {tab.label}
-                    {tab.id === 'orders' && (
-                      <Badge variant="accent" className="ml-auto">3</Badge>
-                    )}
                   </button>
                 ))}
               </nav>
@@ -165,16 +106,16 @@ export default function DashboardPage() {
               <h3 className="font-semibold text-white mb-4">Quick Stats</h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-[#94a3b8]">Total Orders</span>
-                  <span className="text-white font-semibold">12</span>
+                  <span className="text-[#94a3b8]">Total Products</span>
+                  <span className="text-white font-semibold">{products.length}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[#94a3b8]">Wishlist Items</span>
-                  <span className="text-white font-semibold">5</span>
+                  <span className="text-[#94a3b8]">Active</span>
+                  <span className="text-white font-semibold">{products.filter(p => p.status === 'active').length}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[#94a3b8]">Reviews Written</span>
-                  <span className="text-white font-semibold">8</span>
+                  <span className="text-[#94a3b8]">Sold</span>
+                  <span className="text-white font-semibold">{products.filter(p => p.status === 'sold').length}</span>
                 </div>
               </div>
             </Card>
@@ -192,105 +133,77 @@ export default function DashboardPage() {
                       </div>
                       <div className="flex items-end justify-between">
                         <span className="text-2xl font-bold text-white">{stat.value}</span>
-                        <span className="text-green-400 text-sm">{stat.change}</span>
                       </div>
                     </Card>
                   ))}
                 </div>
 
-                <Card className="p-6 mb-6">
-                  <h3 className="font-semibold text-white mb-4">Sales Overview</h3>
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={salesData}>
-                        <defs>
-                          <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#e94560" stopOpacity={0.3}/>
-                            <stop offset="95%" stopColor="#e94560" stopOpacity={0}/>
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#2d2d44" />
-                        <XAxis dataKey="name" stroke="#94a3b8" />
-                        <YAxis stroke="#94a3b8" />
-                        <Tooltip 
-                          contentStyle={{ backgroundColor: '#1a1a2e', border: '1px solid #2d2d44', borderRadius: '8px' }}
-                          labelStyle={{ color: '#fff' }}
-                        />
-                        <Area type="monotone" dataKey="sales" stroke="#e94560" fillOpacity={1} fill="url(#colorSales)" />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-                </Card>
-
                 <Card className="p-6">
-                  <h3 className="font-semibold text-white mb-4">Weekly Revenue</h3>
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={revenueData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#2d2d44" />
-                        <XAxis dataKey="name" stroke="#94a3b8" />
-                        <YAxis stroke="#94a3b8" />
-                        <Tooltip 
-                          contentStyle={{ backgroundColor: '#1a1a2e', border: '1px solid #2d2d44', borderRadius: '8px' }}
-                          labelStyle={{ color: '#fff' }}
-                        />
-                        <Bar dataKey="revenue" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
+                  <h3 className="font-semibold text-white mb-4">Recent Products</h3>
+                  {loading ? (
+                    <div className="text-center text-[#94a3b8] py-8">Loading...</div>
+                  ) : products.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-[#94a3b8] mb-4">No products yet</p>
+                      <Link href="/seller/signup">
+                        <Button>Create Your First Listing</Button>
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {products.slice(0, 5).map((product) => (
+                        <div key={product.id} className="flex items-center gap-4 p-3 bg-[#0f0f23] rounded-lg">
+                          <img src={product.images[0] || '/placeholder.jpg'} alt="" className="w-12 h-12 rounded object-cover" />
+                          <div className="flex-1">
+                            <p className="text-white font-medium">{product.title}</p>
+                            <p className="text-sm text-[#94a3b8]">${product.price}</p>
+                          </div>
+                          <Badge variant={product.status === 'active' ? 'accent' : 'danger'}>
+                            {product.status}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </Card>
               </div>
             )}
 
-            {activeTab === 'orders' && (
+            {activeTab === 'products' && (
               <div>
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="font-heading text-xl font-semibold text-white">Orders</h2>
-                  <Button variant="ghost" size="sm">View All</Button>
+                  <h2 className="font-heading text-xl font-semibold text-white">My Products</h2>
+                  <Link href="/seller/signup">
+                    <Button>Add New Product</Button>
+                  </Link>
                 </div>
 
-                <div className="space-y-4">
-                  {orders.map((order) => (
-                    <Card key={order.id} className="p-4">
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <p className="text-white font-medium">Order #{order.id}</p>
-                          <p className="text-sm text-[#94a3b8]">
-                            {new Date(order.date).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <Badge variant={statusColors[order.status]}>{order.status}</Badge>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-[#94a3b8]">{order.items} item(s)</span>
-                        <span className="text-white font-semibold">${order.total}</span>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
+                {loading ? (
+                  <div className="text-center text-[#94a3b8] py-8">Loading...</div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    {products.map((product) => (
+                      <ProductCard key={product.id} product={product} />
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
             {activeTab === 'wishlist' && (
               <div>
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="font-heading text-xl font-semibold text-white">Wishlist</h2>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {wishlist.map((product) => (
-                    <ProductCard key={product.id} product={product} />
-                  ))}
+                <h2 className="font-heading text-xl font-semibold text-white mb-6">Wishlist</h2>
+                <div className="text-center py-16">
+                  <Heart className="w-16 h-16 text-[#94a3b8] mx-auto mb-4" />
+                  <p className="text-[#94a3b8]">Your wishlist is empty</p>
                 </div>
               </div>
             )}
 
             {activeTab === 'settings' && (
               <div>
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="font-heading text-xl font-semibold text-white">Account Settings</h2>
-                </div>
-
+                <h2 className="font-heading text-xl font-semibold text-white mb-6">Account Settings</h2>
+                
                 <Card className="p-6 mb-4">
                   <h3 className="font-semibold text-white mb-4">Profile Information</h3>
                   <div className="space-y-4">
@@ -309,14 +222,6 @@ export default function DashboardPage() {
                       <p className="text-white">{user?.primaryEmailAddress?.emailAddress || 'N/A'}</p>
                     </div>
                   </div>
-                </Card>
-
-                <Card className="p-6">
-                  <h3 className="font-semibold text-white mb-4">Password</h3>
-                  <p className="text-[#94a3b8] mb-4">
-                    Change your password to keep your account secure.
-                  </p>
-                  <Button variant="outline">Change Password</Button>
                 </Card>
               </div>
             )}

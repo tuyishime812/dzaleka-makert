@@ -8,6 +8,9 @@ import { Badge } from './Badge'
 import { Button } from './Button'
 import { Product } from '@/types'
 import { useCartStore } from '@/store/cart'
+import { useUser } from '@clerk/nextjs'
+import { ChatButton } from '@/components/ChatButton'
+import { createBrowserClient } from '@/lib/supabase'
 import { useState } from 'react'
 
 interface ProductCardProps {
@@ -15,6 +18,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const { user } = useUser()
   const [isWishlisted, setIsWishlisted] = useState(false)
   const addItem = useCartStore((state) => state.addItem)
 
@@ -22,6 +26,20 @@ export function ProductCard({ product }: ProductCardProps) {
     e.preventDefault()
     e.stopPropagation()
     addItem(product)
+  }
+
+  const handleMarkSold = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!confirm('Mark this item as sold? This will remove it from the marketplace.')) return
+    
+    const supabase = createBrowserClient()
+    await supabase
+      .from('products')
+      .update({ status: 'sold' })
+      .eq('id', product.id)
+    
+    window.location.reload()
   }
 
   const handleWishlist = (e: React.MouseEvent) => {
@@ -78,7 +96,7 @@ export function ProductCard({ product }: ProductCardProps) {
           {product.is_event_ticket && product.event_date && (
             <div className="flex items-center gap-2 text-sm text-[#94a3b8]">
               <Calendar className="w-4 h-4" />
-              <span>{new Date(product.event_date).toLocaleDateString()}</span>
+              <span>{new Date(product.event_date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
             </div>
           )}
 
@@ -107,10 +125,27 @@ export function ProductCard({ product }: ProductCardProps) {
                 </span>
               )}
             </div>
-            <Button size="sm" onClick={handleAddToCart}>
-              Add
-            </Button>
+            <div className="flex gap-2">
+              <ChatButton productId={product.id} sellerId={product.seller_id} />
+              {product.status === 'sold' ? (
+                <Badge variant="danger">SOLD</Badge>
+              ) : (
+                <Button size="sm" onClick={handleAddToCart}>
+                  Add
+                </Button>
+              )}
+            </div>
           </div>
+          {user?.id === product.seller_id && product.status === 'active' && (
+            <Button
+              variant="danger"
+              size="sm"
+              className="w-full mt-2"
+              onClick={handleMarkSold}
+            >
+              Mark as Sold
+            </Button>
+          )}
         </div>
       </Card>
     </Link>

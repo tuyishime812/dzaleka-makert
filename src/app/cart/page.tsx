@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, ShoppingBasket } from 'lucide-react'
+import { Minus, Plus, Trash2, ShoppingBag, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { useCartStore } from '@/store/cart'

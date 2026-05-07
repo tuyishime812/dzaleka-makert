@@ -25,7 +25,7 @@ export default function LearnMorePage() {
           </section>
           <section>
             <h2 className="text-2xl font-semibold text-white mb-3">Join Our Community</h2>
-            <p>Whether you're a buyer looking for unique products or a seller ready to grow your business, Dzaleka Business is here for you.</p>
+            <p>Whether you&apos;re a buyer looking for unique products or a seller ready to grow your business, Dzaleka Business is here for you.</p>
             <div className="flex gap-4 mt-6">
               <Link href="/marketplace" className="px-6 py-3 bg-[#e94560] text-white font-semibold rounded-lg hover:bg-[#d63651] transition-colors">
                 Browse Marketplace

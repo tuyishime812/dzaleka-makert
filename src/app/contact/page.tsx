@@ -1,11 +1,9 @@
-import Link from 'next/link'
-
 export default function ContactPage() {
   return (
     <div className="min-h-screen bg-[#0a0a1a] text-white py-20 px-4">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-4xl font-bold mb-6">Contact Us</h1>
-        <p className="text-[#94a3b8] mb-10">We'd love to hear from you. Get in touch with our team.</p>
+        <p className="text-[#94a3b8] mb-10">We&apos;d love to hear from you. Get in touch with our team.</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
           <div className="bg-[#1a1a2e] border border-[#2a2a4a] rounded-2xl p-8">
             <h2 className="text-2xl font-semibold mb-6">Send a Message</h2>

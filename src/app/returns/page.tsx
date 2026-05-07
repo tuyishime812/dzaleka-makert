@@ -12,7 +12,7 @@ export default function ReturnsPage() {
             <h2 className="text-2xl font-semibold text-white mb-3">How to Return</h2>
             <ol className="list-decimal pl-6 space-y-2">
               <li>Go to your dashboard and select the order</li>
-              <li>Click "Request Return" and provide a reason</li>
+              <li>Click &quot;Request Return&quot; and provide a reason</li>
               <li>Our team will review and approve eligible returns</li>
               <li>Follow the provided instructions to return the item</li>
             </ol>

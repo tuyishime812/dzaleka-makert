@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { Package, Heart, Settings, TrendingUp, ShoppingCart } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
@@ -63,12 +64,14 @@ export default function DashboardPage() {
           <div className="lg:col-span-1">
             <Card className="p-4">
               <div className="flex items-center gap-4 mb-6 pb-6 border-b border-[#2d2d44]">
-                {user?.imageUrl ? (
-                  <img 
-                    src={user.imageUrl} 
-                    alt={user.fullName || 'User'} 
-                    className="w-16 h-16 rounded-full"
-                  />
+              {user?.imageUrl ? (
+                <Image 
+                  src={user.imageUrl} 
+                  alt={user.fullName || 'User'} 
+                  width={64}
+                  height={64}
+                  className="rounded-full"
+                />
                 ) : (
                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#e94560] to-purple-600 flex items-center justify-center">
                     <span className="text-2xl font-bold text-white">
@@ -153,7 +156,7 @@ export default function DashboardPage() {
                     <div className="space-y-4">
                       {products.slice(0, 5).map((product) => (
                         <div key={product.id} className="flex items-center gap-4 p-3 bg-[#0f0f23] rounded-lg">
-                          <img src={product.images[0] || '/placeholder.jpg'} alt="" className="w-12 h-12 rounded object-cover" />
+                        <Image src={product.images[0] || '/placeholder.jpg'} alt="" width={48} height={48} className="rounded object-cover" />
                           <div className="flex-1">
                             <p className="text-white font-medium">{product.title}</p>
                             <p className="text-sm text-[#94a3b8]">${product.price}</p>

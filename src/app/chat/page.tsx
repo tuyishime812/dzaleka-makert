@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { MessageCircle, ShoppingBag } from 'lucide-react'
 import { createBrowserClient } from '@/lib/supabase'
@@ -69,11 +70,13 @@ export default function ChatsPage() {
               <Link key={conv.id} href={`/chat/${conv.id}`}>
                 <div className="bg-[#1a1a2e] p-4 rounded-lg hover:bg-[#2d2d44] transition-colors">
                   <div className="flex items-center gap-4">
-                    <img
-                      src={conv.products?.images?.[0] || '/placeholder.jpg'}
-                      alt=""
-                      className="w-12 h-12 rounded object-cover"
-                    />
+                  <Image
+                    src={conv.products?.images?.[0] || '/placeholder.jpg'}
+                    alt=""
+                    width={48}
+                    height={48}
+                    className="rounded object-cover"
+                  />
                     <div className="flex-1">
                       <h3 className="text-white font-semibold">{conv.products?.title}</h3>
                       <p className="text-sm text-[#94a3b8]">

@@ -1,13 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { useUser } from '@clerk/nextjs'
-import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import Link from 'next/link'
-import { createBrowserClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
+import { createBrowserClient } from '@/lib/supabase'
+import { uploadProductImage } from '@/lib/supabase-storage'
+import { useUser } from '@clerk/nextjs'
+import { useRouter } from 'next/navigation'
 
 export default function SellerSignupPage() {
   const { user } = useUser()
@@ -35,16 +37,22 @@ export default function SellerSignupPage() {
     { value: '5', label: 'Sports' },
   ]
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
-    if (!files) return
+    if (!files || !user) return
 
-    // In production, upload to Supabase Storage
-    // For now, use placeholder URLs
-    const newImages = Array.from(files).map((_, i) => 
-      `https://images.unsplash.com/photo-${1500000000000 + i}?w=800`
-    )
-    setFormData({ ...formData, images: [...formData.images, ...newImages] })
+    setLoading(true)
+    try {
+      const uploadPromises = Array.from(files).map(file => 
+        uploadProductImage(file, user.id)
+      )
+      const newImages = await Promise.all(uploadPromises)
+      setFormData({ ...formData, images: [...formData.images, ...newImages] })
+    } catch (error: any) {
+      alert('Error uploading images: ' + error.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -199,7 +207,7 @@ export default function SellerSignupPage() {
             {formData.images.length > 0 && (
               <div className="flex gap-2 mt-4">
                 {formData.images.map((img, idx) => (
-                  <img key={idx} src={img} alt="" className="w-20 h-20 rounded object-cover" />
+                <Image key={idx} src={img} alt="" width={80} height={80} className="rounded object-cover" />
                 ))}
               </div>
             )}

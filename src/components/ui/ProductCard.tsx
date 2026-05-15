@@ -11,7 +11,7 @@ import { useCartStore } from '@/store/cart'
 import { useUser } from '@clerk/nextjs'
 import { ChatButton } from '@/components/ChatButton'
 import { createBrowserClient } from '@/lib/supabase'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 interface ProductCardProps {
   product: Product
@@ -21,6 +21,21 @@ export function ProductCard({ product }: ProductCardProps) {
   const { user } = useUser()
   const [isWishlisted, setIsWishlisted] = useState(false)
   const addItem = useCartStore((state) => state.addItem)
+
+  useEffect(() => {
+    if (!user) return
+    const checkWishlist = async () => {
+      const supabase = createBrowserClient()
+      const { data } = await supabase
+        .from('wishlist')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('product_id', product.id)
+        .maybeSingle()
+      if (data) setIsWishlisted(true)
+    }
+    checkWishlist()
+  }, [user, product.id])
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -42,9 +57,23 @@ export function ProductCard({ product }: ProductCardProps) {
     window.location.reload()
   }
 
-  const handleWishlist = (e: React.MouseEvent) => {
+  const handleWishlist = async (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
+    if (!user) return
+    
+    const supabase = createBrowserClient()
+    if (isWishlisted) {
+      await supabase
+        .from('wishlist')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('product_id', product.id)
+    } else {
+      await supabase
+        .from('wishlist')
+        .insert({ user_id: user.id, product_id: product.id })
+    }
     setIsWishlisted(!isWishlisted)
   }
 

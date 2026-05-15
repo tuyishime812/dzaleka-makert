@@ -1,25 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase-server'
+import { createAdminClient } from '@/lib/supabase-admin'
+import { auth } from '@clerk/nextjs/server'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params
-  const supabase = await createServerClient()
+  const { userId } = await auth()
   
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  if (!user) {
+  if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   
-  // Verify user is part of this conversation
+  const { id } = await params
+  const supabase = createAdminClient()
+  
   const { data: conv } = await supabase
     .from('conversations')
     .select('*')
     .eq('id', id)
-    .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
+    .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`)
     .single()
   
   if (!conv) {
@@ -43,23 +43,22 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params
-  const supabase = await createServerClient()
+  const { userId } = await auth()
   
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  if (!user) {
+  if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   
+  const { id } = await params
+  const supabase = createAdminClient()
+  
   const body = await request.json()
   
-  // Verify user is part of this conversation
   const { data: conv } = await supabase
     .from('conversations')
     .select('*')
     .eq('id', id)
-    .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
+    .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`)
     .single()
   
   if (!conv) {
@@ -70,13 +69,12 @@ export async function POST(
     .from('messages')
     .insert({
       conversation_id: id,
-      sender_id: user.id,
+      sender_id: userId,
       content: body.content,
     })
     .select()
     .single()
   
-  // Update conversation updated_at
   await supabase
     .from('conversations')
     .update({ updated_at: new Date().toISOString() })

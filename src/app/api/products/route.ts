@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
+import { auth } from '@clerk/nextjs/server'
 
 export async function GET(request: NextRequest) {
   const supabase = await createServerClient()
@@ -45,21 +46,20 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = await createServerClient()
+  const { userId } = await auth()
   
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  if (!user) {
+  if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   
+  const supabase = await createServerClient()
   const body = await request.json()
   
   const { data, error } = await supabase
     .from('products')
     .insert({
       ...body,
-      seller_id: user.id,
+      seller_id: userId,
     })
     .select()
     .single()

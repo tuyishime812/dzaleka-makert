@@ -30,9 +30,7 @@ export default function ChatsPage() {
         .from('conversations')
         .select(`
           *,
-          products (title, images),
-          buyer:profiles!conversations_buyer_id_fkey (username, avatar_url),
-          seller:profiles!conversations_seller_id_fkey (username, avatar_url)
+          products (title, images)
         `)
         .order('updated_at', { ascending: false })
 

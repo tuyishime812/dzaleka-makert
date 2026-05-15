@@ -33,23 +33,37 @@ export default function EventsPage() {
   const [sortBy, setSortBy] = useState('date')
   const [events, setEvents] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
+  const [visibleCount, setVisibleCount] = useState(12)
+  const PAGE_SIZE = 12
 
   useEffect(() => {
     const fetchEvents = async () => {
       const supabase = createBrowserClient()
-      const { data } = await supabase
+      
+      let query = supabase
         .from('products')
         .select('*')
         .eq('is_event_ticket', true)
         .eq('status', 'active')
-        .order('event_date', { ascending: true })
+      
+      if (sortBy === 'price-low') {
+        query = query.order('price', { ascending: true })
+      } else if (sortBy === 'price-high') {
+        query = query.order('price', { ascending: false })
+      } else if (sortBy === 'popular') {
+        query = query.order('views', { ascending: false })
+      } else {
+        query = query.order('event_date', { ascending: true })
+      }
+      
+      const { data } = await query
       
       if (data) setEvents(data)
       setLoading(false)
     }
 
     fetchEvents()
-  }, [])
+  }, [sortBy])
 
   const filteredEvents = events.filter((event) => {
     if (searchQuery && !event.title.toLowerCase().includes(searchQuery.toLowerCase())) {
@@ -57,6 +71,8 @@ export default function EventsPage() {
     }
     return true
   })
+
+  const displayedEvents = filteredEvents.slice(0, visibleCount)
 
   return (
     <div className="min-h-screen bg-[#0f0f23]">
@@ -121,7 +137,7 @@ export default function EventsPage() {
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredEvents.map((event) => (
+              {displayedEvents.map((event) => (
                 <ProductCard key={event.id} product={event} />
               ))}
             </div>
@@ -141,9 +157,13 @@ export default function EventsPage() {
           </>
         )}
 
-        <div className="flex justify-center mt-12">
-          <Button variant="outline">Load More Events</Button>
-        </div>
+        {displayedEvents.length < filteredEvents.length && (
+          <div className="flex justify-center mt-12">
+            <Button variant="outline" onClick={() => setVisibleCount(v => v + PAGE_SIZE)}>
+              Load More Events ({filteredEvents.length - displayedEvents.length} remaining)
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   )

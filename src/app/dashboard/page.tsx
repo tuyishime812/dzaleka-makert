@@ -193,15 +193,7 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {activeTab === 'wishlist' && (
-              <div>
-                <h2 className="font-heading text-xl font-semibold text-white mb-6">Wishlist</h2>
-                <div className="text-center py-16">
-                  <Heart className="w-16 h-16 text-[#94a3b8] mx-auto mb-4" />
-                  <p className="text-[#94a3b8]">Your wishlist is empty</p>
-                </div>
-              </div>
-            )}
+            {activeTab === 'wishlist' && <WishlistTab userId={user?.id} />}
 
             {activeTab === 'settings' && (
               <div>
@@ -231,6 +223,51 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+function WishlistTab({ userId }: { userId?: string | null }) {
+  const [wishlistProducts, setWishlistProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!userId) return
+    const fetchWishlist = async () => {
+      const supabase = createBrowserClient()
+      const { data } = await supabase
+        .from('wishlist')
+        .select('products (*)')
+        .eq('user_id', userId)
+      if (data) {
+        const products = data
+          .map((w: Record<string, unknown>) => w.products)
+          .filter(Boolean)
+          .flat() as Product[]
+        setWishlistProducts(products)
+      }
+      setLoading(false)
+    }
+    fetchWishlist()
+  }, [userId])
+
+  return (
+    <div>
+      <h2 className="font-heading text-xl font-semibold text-white mb-6">Wishlist</h2>
+      {loading ? (
+        <div className="text-center text-[#94a3b8] py-8">Loading...</div>
+      ) : wishlistProducts.length === 0 ? (
+        <div className="text-center py-16">
+          <Heart className="w-16 h-16 text-[#94a3b8] mx-auto mb-4" />
+          <p className="text-[#94a3b8]">Your wishlist is empty</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          {wishlistProducts.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

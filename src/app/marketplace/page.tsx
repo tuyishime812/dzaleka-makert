@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Search, Grid, List, SlidersHorizontal } from 'lucide-react'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
@@ -11,7 +12,7 @@ import { ProductCard } from '@/components/ui/ProductCard'
 import { Product } from '@/types'
 import { createBrowserClient } from '@/lib/supabase'
 
-const categories = [
+const categoryOptions = [
   { value: '', label: 'All Categories' },
   { value: 'electronics', label: 'Electronics' },
   { value: 'fashion', label: 'Fashion' },
@@ -29,31 +30,50 @@ const sortOptions = [
   { value: 'rating', label: 'Highest Rated' },
 ]
 
-export default function MarketplacePage() {
+function MarketplaceContent() {
+  const searchParams = useSearchParams()
   const [searchQuery, setSearchQuery] = useState('')
-  const [category, setCategory] = useState('')
+  const [category, setCategory] = useState(searchParams.get('category') || '')
   const [sortBy, setSortBy] = useState('newest')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [showFilters, setShowFilters] = useState(false)
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
+  const [visibleCount, setVisibleCount] = useState(12)
+  const PAGE_SIZE = 12
 
   useEffect(() => {
     const fetchProducts = async () => {
       const supabase = createBrowserClient()
-      const { data } = await supabase
+      
+      let query = supabase
         .from('products')
         .select('*')
         .eq('is_event_ticket', false)
         .eq('status', 'active')
-        .order('created_at', { ascending: false })
+      
+      if (category) {
+        query = query.eq('category_id', category)
+      }
+      
+      if (sortBy === 'price-low') {
+        query = query.order('price', { ascending: true })
+      } else if (sortBy === 'price-high') {
+        query = query.order('price', { ascending: false })
+      } else if (sortBy === 'popular') {
+        query = query.order('views', { ascending: false })
+      } else {
+        query = query.order('created_at', { ascending: false })
+      }
+      
+      const { data } = await query
       
       if (data) setProducts(data)
       setLoading(false)
     }
 
     fetchProducts()
-  }, [])
+  }, [category, sortBy])
 
   const filteredProducts = products.filter((product) => {
     if (searchQuery && !product.title.toLowerCase().includes(searchQuery.toLowerCase())) {
@@ -61,6 +81,8 @@ export default function MarketplacePage() {
     }
     return true
   })
+
+  const displayedProducts = filteredProducts.slice(0, visibleCount)
 
   return (
     <div className="min-h-screen bg-[#0f0f23]">
@@ -87,7 +109,7 @@ export default function MarketplacePage() {
           </div>
           <div className="flex gap-2">
             <Select
-              options={categories}
+              options={categoryOptions}
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               className="w-48"
@@ -180,7 +202,7 @@ export default function MarketplacePage() {
                   : 'grid-cols-1'
               }`}
             >
-              {filteredProducts.map((product) => (
+              {displayedProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
@@ -207,10 +229,22 @@ export default function MarketplacePage() {
           </>
         )}
 
-        <div className="flex justify-center mt-12">
-          <Button variant="outline">Load More</Button>
-        </div>
+        {displayedProducts.length < filteredProducts.length && (
+          <div className="flex justify-center mt-12">
+            <Button variant="outline" onClick={() => setVisibleCount(v => v + PAGE_SIZE)}>
+              Load More ({filteredProducts.length - displayedProducts.length} remaining)
+            </Button>
+          </div>
+        )}
       </div>
     </div>
+  )
+}
+
+export default function MarketplacePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#0f0f23] pt-24 pb-16 text-center text-[#94a3b8] py-12">Loading...</div>}>
+      <MarketplaceContent />
+    </Suspense>
   )
 }

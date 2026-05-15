@@ -1,25 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
+import { createAdminClient } from '@/lib/supabase-admin'
+import { auth } from '@clerk/nextjs/server'
 
 export async function GET() {
-  const supabase = await createServerClient()
+  const { userId } = await auth()
   
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  if (!user) {
+  if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+  
+  const supabase = createAdminClient()
   
   const { data, error } = await supabase
     .from('conversations')
     .select(`
       *,
       products (*),
-      buyer:profiles!conversations_buyer_id_fkey (id, username, avatar_url),
-      seller:profiles!conversations_seller_id_fkey (id, username, avatar_url),
       messages!inner (content, created_at, sender_id)
     `)
-    .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
+    .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`)
     .order('updated_at', { ascending: false })
   
   if (error) {
@@ -30,23 +30,22 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = await createServerClient()
+  const { userId } = await auth()
   
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  if (!user) {
+  if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+  
+  const supabase = createAdminClient()
   
   const body = await request.json()
   const { product_id, seller_id } = body
   
-  // Check if conversation already exists
   const { data: existing } = await supabase
     .from('conversations')
     .select('*')
     .eq('product_id', product_id)
-    .eq('buyer_id', user.id)
+    .eq('buyer_id', userId)
     .eq('seller_id', seller_id)
     .single()
   
@@ -58,7 +57,7 @@ export async function POST(request: NextRequest) {
     .from('conversations')
     .insert({
       product_id,
-      buyer_id: user.id,
+      buyer_id: userId,
       seller_id,
     })
     .select()

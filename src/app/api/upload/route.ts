@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase-server'
+import { createAdminClient } from '@/lib/supabase-admin'
+import { auth } from '@clerk/nextjs/server'
 
 export async function POST(request: NextRequest) {
-  const supabase = await createServerClient()
+  const { userId } = await auth()
   
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  if (!user) {
+  if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+  
+  const supabase = createAdminClient()
   
   const formData = await request.formData()
   const file = formData.get('file') as File
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
   }
   
   const fileExt = file.name.split('.').pop()
-  const fileName = `${user.id}/${Date.now()}.${fileExt}`
+  const fileName = `${userId}/${Date.now()}.${fileExt}`
   
   const { data, error } = await supabase.storage
     .from(bucket)

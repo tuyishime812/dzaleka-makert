@@ -60,12 +60,11 @@ export default function SellerSignupPage() {
     if (!user) return
 
     setLoading(true)
-    const supabase = createBrowserClient()
 
-    const { error } = await supabase
-      .from('products')
-      .insert({
-        seller_id: user.id,
+    const response = await fetch('/api/products', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         title: formData.title,
         description: formData.description,
         price: parseFloat(formData.price),
@@ -78,13 +77,15 @@ export default function SellerSignupPage() {
         images: formData.images.length > 0 ? formData.images : ['/placeholder.jpg'],
         status: 'active',
       })
+    })
 
     setLoading(false)
 
-    if (!error) {
+    if (response.ok) {
       router.push('/dashboard?tab=products')
     } else {
-      alert('Error creating product: ' + error.message)
+      const error = await response.json()
+      alert('Error creating product: ' + error.error)
     }
   }
 

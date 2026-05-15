@@ -1,25 +1,22 @@
-import { createBrowserClient } from './supabase'
+import { createBrowserClient } from '@/lib/supabase'
 
 export async function uploadProductImage(file: File, userId: string): Promise<string> {
-  const supabase = createBrowserClient()
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('bucket', 'product-images')
   
-  const fileExt = file.name.split('.').pop()
-  const fileName = `${userId}/${Date.now()}.${fileExt}`
+  const response = await fetch('/api/upload', {
+    method: 'POST',
+    body: formData
+  })
   
-  const { data, error } = await supabase.storage
-    .from('product-images')
-    .upload(fileName, file, {
-      cacheControl: '3600',
-      upsert: false
-    })
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Upload failed')
+  }
   
-  if (error) throw error
-  
-  const { data: { publicUrl } } = supabase.storage
-    .from('product-images')
-    .getPublicUrl(data.path)
-  
-  return publicUrl
+  const { url } = await response.json()
+  return url
 }
 
 export async function uploadAvatar(file: File, userId: string): Promise<string> {

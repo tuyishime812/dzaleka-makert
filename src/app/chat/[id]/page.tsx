@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { Send } from 'lucide-react'
+import { useUser } from '@clerk/nextjs'
 import { createBrowserClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -24,6 +25,7 @@ interface Conversation {
 
 export default function ChatPage() {
   const params = useParams()
+  const { user } = useUser()
   const [messages, setMessages] = useState<Message[]>([])
   const [conversation, setConversation] = useState<Conversation | null>(null)
   const [newMessage, setNewMessage] = useState('')
@@ -88,13 +90,14 @@ export default function ChatPage() {
   }, [messages])
 
   const handleSend = async () => {
-    if (!newMessage.trim()) return
+    if (!newMessage.trim() || !user?.id) return
 
     const supabase = createBrowserClient()
     await supabase
       .from('messages')
       .insert({
         conversation_id: params.id,
+        sender_id: user.id,
         content: newMessage,
       })
 
@@ -123,11 +126,11 @@ export default function ChatPage() {
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex ${msg.sender_id ? 'justify-end' : 'justify-start'}`}
+                className={`flex ${msg.sender_id === user?.id ? 'justify-end' : 'justify-start'}`}
               >
                 <div
                   className={`max-w-xs md:max-w-md px-4 py-2 rounded-lg ${
-                    msg.sender_id
+                    msg.sender_id === user?.id
                       ? 'bg-[#e94560] text-white'
                       : 'bg-[#2d2d44] text-white'
                   }`}

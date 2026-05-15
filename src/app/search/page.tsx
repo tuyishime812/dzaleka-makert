@@ -37,6 +37,8 @@ function SearchResults() {
   const [selectedRatings, setSelectedRatings] = useState<number[]>([])
   const [results, setResults] = useState<Product[]>([])
   const [loading, setLoading] = useState(false)
+  const [visibleCount, setVisibleCount] = useState(12)
+  const PAGE_SIZE = 12
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -95,6 +97,7 @@ function SearchResults() {
   }
 
   const hasFilters = category || sortBy !== 'relevance' || priceRange.min || priceRange.max || selectedRatings.length > 0
+  const displayedResults = results.slice(0, visibleCount)
 
   return (
     <>
@@ -193,7 +196,7 @@ function SearchResults() {
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {results.map((product) => (
+            {displayedResults.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
@@ -213,9 +216,13 @@ function SearchResults() {
         </>
       )}
 
-      <div className="flex justify-center mt-12">
-        <Button variant="outline">Load More</Button>
-      </div>
+      {displayedResults.length < results.length && (
+        <div className="flex justify-center mt-12">
+          <Button variant="outline" onClick={() => setVisibleCount(v => v + PAGE_SIZE)}>
+            Load More ({results.length - displayedResults.length} remaining)
+          </Button>
+        </div>
+      )}
     </>
   )
 }

@@ -14,6 +14,7 @@ export default function CheckoutPage() {
   const [step, setStep] = useState(1)
   const [isProcessing, setIsProcessing] = useState(false)
   const [orderId, setOrderId] = useState('')
+  const [error, setError] = useState('')
   const [formData, setFormData] = useState({
     email: '',
     firstName: '',
@@ -45,11 +46,47 @@ export default function CheckoutPage() {
     }
 
     setIsProcessing(true)
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-    setIsProcessing(false)
-    setOrderId(`DZ${Date.now().toString().slice(-6)}`)
-    clearCart()
-    setStep(4)
+    setError('')
+
+    try {
+      const itemsPayload = items.map(item => ({
+        product_id: item.product.id,
+        quantity: item.quantity,
+        price_at_purchase: item.product.price,
+      }))
+
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: itemsPayload,
+          total_amount: total,
+          shipping_address: {
+            name: `${formData.firstName} ${formData.lastName}`,
+            street: formData.address,
+            city: formData.city,
+            state: formData.state,
+            zip: formData.zip,
+            country: 'Malawi',
+            phone: formData.phone,
+          },
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to create order')
+      }
+
+      setOrderId(data.orderId)
+      clearCart()
+      setStep(4)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong')
+    } finally {
+      setIsProcessing(false)
+    }
   }
 
   if (items.length === 0 && step !== 4) {
@@ -77,15 +114,20 @@ export default function CheckoutPage() {
           <h1 className="font-heading text-3xl font-bold text-white mb-4">
             Order Confirmed!
           </h1>
-          <p className="text-[#94a3b8] mb-8">
+          <p className="text-[#94a3b8] mb-2">
             Thank you for your purchase. You will receive a confirmation email shortly.
           </p>
-          <p className="text-[#94a3b8] mb-8">
-            Order #{orderId}
+          <p className="text-sm text-[#94a3b8] mb-8">
+            Order #{orderId.slice(0, 8)}
           </p>
-          <Link href="/">
-            <Button>Continue Shopping</Button>
-          </Link>
+          <div className="flex gap-4 justify-center">
+            <Link href="/orders">
+              <Button variant="outline">View Order</Button>
+            </Link>
+            <Link href="/">
+              <Button>Continue Shopping</Button>
+            </Link>
+          </div>
         </div>
       </div>
     )
@@ -255,6 +297,10 @@ export default function CheckoutPage() {
                     </div>
                   </div>
                 </Card>
+              )}
+
+              {error && (
+                <p className="text-red-400 text-sm mt-4 bg-red-500/10 p-3 rounded-lg">{error}</p>
               )}
 
               <div className="flex gap-4 mt-6">
